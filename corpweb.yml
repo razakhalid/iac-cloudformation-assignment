@@ -6,7 +6,7 @@ Parameters:
       - t2.small
     Description: Instance type for EC2 instances
   KeyPair:
-    Type: AWS:EC2::KeyPair::KeyName
+    Type: AWS::EC2::KeyPair::KeyName
     Description: Key pair for EC2 instances
   YourIp:
     Type: String
