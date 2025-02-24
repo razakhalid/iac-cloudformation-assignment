@@ -1,0 +1,126 @@
+Parameters:
+  InstanceType:
+    Type: String
+    AllowedValues:
+      - t2.micro
+      - t2.small
+    Description: Instance type for EC2 instances
+  KeyPair:
+    Type: AWS:EC2::KeyPair::KeyName
+    Description: Key pair for EC2 instances
+  YourIp:
+    Type: String
+    Description: Enter your public IP address in CIDR notation
+
+Resources:
+  EngineeringVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/18
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+        VpcId: !Ref EngineeringVPC
+        CidrBlock: 10.0.0.0/24
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref EngineeringVPC
+      CidrBlock: 10.0.1.0/24
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref EngineeringVPC
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref EngineeringVPC
+      InternetGatewayId: !Ref InternetGateway
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  WebserversSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow access via HTTP and SSH
+      VpcId: !Ref EngineeringVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref YourIp
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+  Web1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPair
+      ImageId: ami-01c34ab2709337aa
+      SubnetId: !Ref PublicSubnet1
+      SecurityGroupIds:
+        - !Ref WebserversSG
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          yum install -y git httpd php
+          service httpd start
+          chkconfig httpd on
+          aws s3 cp s3://seis665-public/index.php /var/www/html/
+  Web2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPair
+      ImageId: ami-01c34ab2709337aa
+      SubnetId: !Ref PublicSubnet2
+      SecurityGroupIds:
+        - !Ref WebserversSG
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y
+          yum install -y git httpd php
+          service httpd start
+          chkconfig httpd on
+          aws s3 cp s3://seis665-public/index.php /var/www/html/
+  EngineeringLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: EngineeringLB
+      Scheme: internet-facing
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref WebserversSG
+  EngineeringWebservers:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: EngineeringWebservers
+      Protocol: HTTP
+      Port: 80
+      VpcId: !Ref EngineeringVPC
+      TargetType: instance
+      HealthCheckPath: "/"
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: "80"
+      Targets:
+        - Id: !Ref Web1
+        - Id: !Ref Web2
+Outputs:
+  WebUrl:
+    Description: DNS name of the load balancer
+    Value: !GetAtt EngineeringLB.DNSName
+
+
+
