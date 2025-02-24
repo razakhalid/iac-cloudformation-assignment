@@ -70,7 +70,6 @@ Resources:
       KeyName: !Ref KeyPair
       ImageId: ami-01cc34ab2709337aa
       SubnetId: !Ref PublicSubnet1
-      AssociatePublicIpAddress: true
       SecurityGroupIds:
         - !Ref WebserversSG
       UserData:
@@ -88,7 +87,6 @@ Resources:
       KeyName: !Ref KeyPair
       ImageId: ami-01cc34ab2709337aa
       SubnetId: !Ref PublicSubnet2
-      AssociatePublicIpAddress: true
       SecurityGroupIds:
         - !Ref WebserversSG
       UserData:
