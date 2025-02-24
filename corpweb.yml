@@ -64,7 +64,7 @@ Resources:
     Properties:
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyPair
-      ImageId: ami-01c34ab2709337aa
+      ImageId: ami-01cc34ab2709337aa
       SubnetId: !Ref PublicSubnet1
       SecurityGroupIds:
         - !Ref WebserversSG
@@ -81,7 +81,7 @@ Resources:
     Properties:
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyPair
-      ImageId: ami-01c34ab2709337aa
+      ImageId: ami-01cc34ab2709337aa
       SubnetId: !Ref PublicSubnet2
       SecurityGroupIds:
         - !Ref WebserversSG
